@@ -83,3 +83,5 @@ parent()
 # print at the end of the file the amount of packets, and the amount of bytes sended on the time interval
 # say the functionality of the program
 # signals to ocmmunicate between child and parent
+# exit with 'q'
+# if ctrl+ c, close the current file
