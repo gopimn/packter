@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-
 import argparse
 import pyshark
 import time, datetime, time
@@ -16,6 +15,13 @@ parser.add_argument('-t', action = 'store', dest = 'timeSecs', default = 300,
                    help='Remote address')
 args = parser.parse_args()
 captureTimeSecs=int(args.timeSecs)
+debug=int(args.debugMode)
+
+def printv(string):
+    global debug
+    if debug == 1:
+        print string
+
 #print args.iface
 # print args.remoteAddr 
 if args.iface == 1:
@@ -24,19 +30,20 @@ if args.iface == 1:
     iface=str(aux[1])
 else:
     iface=args.iface
-print iface
+printv(iface)
 net.ifaddresses(iface)
 ip = net.ifaddresses(iface)[net.AF_INET][0]['addr']
-print ip
+printv(ip)
 
 
 ##5 min GATTERING CHILD FUNCTION!
 def child():
     k=0
     n=0
+    c=0
     fileName = time.strftime("%Y%m%d-%H%M%S")
     fileName = './packter'+fileName+'.txt'
-    print fileName
+    printv(fileName)
     f = open(fileName, 'w')
     #start_time = time.time()
     capture = pyshark.LiveCapture(interface=iface)
@@ -48,40 +55,43 @@ def child():
                     if (capture[i].ip.src == args.remoteAddr or capture[i].ip.dst == args.remoteAddr):
                         hagale= datetime.datetime.now()
                         info=str(hagale)+':'+ capture[i].ip.src+' -> '+capture[i].ip.dst+ ' size: '+capture[i].length+' Bytes\n'
-                        print info
+                        printv(info)
                         f.write(info)
+                        c= c+int (capture[i].length)
                         k=k+1
                 else:
                     hagale= datetime.datetime.now()
                     info=str(hagale)+':'+ capture[i].ip.src+' -> '+capture[i].ip.dst+ ' size: '+capture[i].length+' Bytes\n'
-                    print info
+                    printv (info)
                     f.write(info)
+                    c= c+int (capture[i].length)
                     k=k+1
         else:
             n=n+1
-            print 'NO IP:',n
+            printv( 'NO IP:'+str(n))
+    info='#########################################################################\n'
+    info = info + 'total packets on interval: ' + str(k) + '\n Total bytes on interval:' + str(c)
+    printv (info) 
     f.flush()
     f.close()
-    print 'File: '+ fileName + ' written succesfully'
+    printv ('File: '+ fileName + ' written succesfully')
     os._exit(0)
     
 def parent():
     while True:
-        print "We are in the parent process with PID= %d"%os.getpid()
+        printv("We are in the parent process with PID= %d"%os.getpid())
         newRef=os.fork()
         if newRef==0:
             child()
         else:
-            print "We are in the parent process and our child process has PID= %d\n"%newRef
+            printv("We are in the parent process and our child process has PID= %d\n"%newRef)
         time.sleep(captureTimeSecs)
 
 parent()
 
 #TODO
-# debug mode
+# debug mode, what should be printed and what not
 # error if no connection
-# print at the end of the file the amount of packets, and the amount of bytes sended on the time interval
-# say the functionality of the program
-# signals to ocmmunicate between child and parent
-# exit with 'q'
-# if ctrl+ c, close the current file
+# say the functionality of the program if errors
+# signals to communicate between child and parent
+# do you want the no ip packets to be counted on the file
