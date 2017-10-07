@@ -3,7 +3,7 @@ import argparse
 import pyshark
 import time, datetime, time
 import netifaces as net
-import sys, os
+import sys, os, signal
 
 parser = argparse.ArgumentParser(description='Python packet counter script')
 parser.add_argument('-i',action = 'store', dest = 'iface', default=1,
@@ -55,11 +55,19 @@ time.sleep(1)
 print 'GO!'
 time.sleep(1)
 ##5 min GATTERING CHILD FUNCTION!
-
 def printv(string):
     global debug
     if debug == 1:
         print string
+
+class GracefulKiller:
+    kill_now = False
+    def __init__(self):
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
+        
+    def exit_gracefully(self,signum, frame):
+        self.kill_now = True
         
 def child():
     k=0
@@ -69,7 +77,7 @@ def child():
     fileName = './packter'+fileName+'.txt'
     print 'The actual file is: '+fileName
     f = open(fileName, 'w')
-    info = '####################### Packter File #########################'
+    info = '########################## Packter File ############################\n'
     f.write(info)
     #start_time = time.time()
     capture = pyshark.LiveCapture(interface=iface)
@@ -105,6 +113,7 @@ def child():
     os._exit(0)
     
 def parent():
+    killer = GracefulKiller()
     while True:
         printv("We are in the parent process with PID= %d"%os.getpid())
         newRef=os.fork()
@@ -113,8 +122,7 @@ def parent():
         else:
             printv("We are in the parent process and our child process has PID= %d\n"%newRef)
         time.sleep(captureTimeSecs)
-
+        if killer.kill_now:
+            break
+    print "End of the program. CTRL+C pressed.\nWill finish capturing the las file\n Bye:)"
 parent()
-
-#TODO
-# signals to communicate between child and parent
