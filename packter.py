@@ -124,5 +124,5 @@ def parent():
         time.sleep(captureTimeSecs)
         if killer.kill_now:
             break
-    print "End of the program. CTRL+C pressed.\nWill finish capturing the las file\n Bye:)"
+    print "End of the program. CTRL+C pressed.\nWill finish capturing the last file\n Bye:)"
 parent()
