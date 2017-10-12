@@ -38,7 +38,7 @@ captureTimeSecs=int(args.timeSecs)
 debug=int(args.verboseMode)
 remotead=args.remoteAddr
 header=args.header
-detailed=args.detailed
+detailed=int(args.detailed)
 gws=net.gateways()
 if gws['default'] == {}:
     print 'No connection. End of Program'
@@ -113,14 +113,14 @@ for i in range(0,len(capture)):
                         downBytes = upBytes + int(capture[i].length)
                         downCount = upCount + 1
             else:
+                if actualSec == 0:
+                    actualSec=capture[i].sniff_time
                 if detailed == 1:
                     info2=str(actualSec.strftime("%H:%M:%S"))+':'+ capture[i].ip.src+' -> '
-                    info2=info+capture[i].ip.dst+ ' size: '+capture[i].length+' Bytes\n'
+                    info2=info2+capture[i].ip.dst+ ' size: '+capture[i].length+' Bytes\n'
                     f2.write(info2)
                 totalCount=totalCount+1
                 totalBytes=totalBytes + int(capture[i].length)
-                if actualSec == 0:
-                    actualSec=capture[i].sniff_time
                 if actualSec.second != capture[i].sniff_time.second:
                     actualText=str(actualSec.strftime("%H:%M:%S"))+','+str(upCount)+','+str(upBytes)+','+str(downCount)+','+str(downBytes)+'\n'
                     f.write(actualText)
@@ -146,6 +146,7 @@ if header == 1:
     f.write(info)
 if detailed == 1:
     f2.close()
+    printv('File: '+ fileName2 + ' written succesfully')
 f.flush()
 f.close()
 printv('File: '+ fileName + ' written succesfully')
