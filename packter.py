@@ -29,19 +29,14 @@ def printv(string):
 
 args = parser.parse_args()
 captureTimeSecs=int(args.timeSecs)
-debug=int(args.verboseMode)
+debug=args.verboseMode
 remotead=args.remoteAddr
 header=args.header
-detailed=int(args.detailed)
+detailed=args.detailed
 
-print '\n#########################Welcome to Packter#############################\n'
-print 'Starting in\n3'
-time.sleep(1)
-print '2'
-time.sleep(1)
-print '1'
-time.sleep(1)
-
+print '\nWelcome to packter :)\n'
+if debug != 1:
+    print 'Silent mode activated, will do the work BUT will not print anything '
 gws=net.gateways()
 if gws['default'] == {}:
     print 'No connection. End of Program'
@@ -86,9 +81,10 @@ if header == 1:
     info = info+'############################ Packter Data ##############################\n'
     f.write(info)
     printv(info)
+printv('\nCapture has started, do not disconnect your network interface\n')
 capture = pyshark.LiveCapture(interface=iface)
 capture.sniff(timeout= (captureTimeSecs+1)) #one more sec just in case
-printv('Finished capture, processing data and saving results')
+printv('Finished capture, processing data and saving results\n')
 for i in range(0,len(capture)):
     if 'IP' in capture[i]:
         if  capture[i].ip.src == ip or capture[i].ip.dst == ip:
@@ -101,9 +97,9 @@ for i in range(0,len(capture)):
                     if actualSec == 0:
                         actualSec=capture[i].sniff_time
                     if actualSec.second != capture[i].sniff_time.second:
-                        actualText=str(actualSec.strftime("%H:%M:%S"))+'\t'+str(upCount)+'\t'+str(upBytes)+'\t'+str(downCount)+'\t'+str(downBytes)+'\n'
-                        f.write(actualText)
-                        printv(actualText)
+                        info=str(actualSec.strftime("%H:%M:%S"))+'\t'+str(upCount)+'\t'+str(upBytes)+'\t'+str(downCount)+'\t'+str(downBytes)+'\n'
+                        f.write(info)
+                        printv(info)
                         actualSec=capture[i].sniff_time
                         upBytes=0
                         downBytes=0
@@ -127,9 +123,9 @@ for i in range(0,len(capture)):
                     info2=info2+capture[i].ip.dst+ ' size: '+capture[i].length+' Bytes\n'
                     f2.write(info2)
                 if actualSec.second != capture[i].sniff_time.second:
-                    actualText=str(actualSec.strftime("%H:%M:%S"))+'\t'+str(upCount)+'\t'+str(upBytes)+'\t'+str(downCount)+'\t'+str(downBytes)+'\n'
-                    f.write(actualText)
-                    printv(actualText)
+                    info=str(actualSec.strftime("%H:%M:%S"))+'\t'+str(upCount)+'\t'+str(upBytes)+'\t'+str(downCount)+'\t'+str(downBytes)+'\n'
+                    f.write(info)
+                    printv(info)
                     actualSec=capture[i].sniff_time
                     upBytes=0
                     downBytes=0
@@ -158,7 +154,8 @@ if header == 1:
     f.write(info)
 if detailed == 1:
     f2.close()
-    printv('File: '+ fileName2 + ' written succesfully')
+    printv('File '+ fileName2 + ' written succesfully')
 f.flush()
 f.close()
-printv('File: '+ fileName + ' written succesfully')
+printv('File '+ fileName + ' written succesfully')
+print 'Program ended correctly\nGood bye.'
