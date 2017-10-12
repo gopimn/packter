@@ -1,63 +1,10 @@
-#!/usr/bin/env python2
-import argparse
-import pyshark
-import time, datetime
-import netifaces as net
-import sys, os, signal
-
-parser = argparse.ArgumentParser(description='Python packet counter script using pyshark libraries')
-parser.add_argument('-i',action = 'store', dest = 'iface', default=1,
-                   help='Network interface  to be sniffed')
-parser.add_argument('-a', action = 'store', dest = 'remoteAddr', default = 1,
-                   help='Remote address')
-parser.add_argument('-v', action = 'store', dest = 'verboseMode', default = 0,
-                   help='Show extra information with value 1')
-parser.add_argument('-t', action = 'store', dest = 'timeSecs', default = 300,
-                   help='Duration of the files')
-parser.add_argument('-r', action = 'store', dest = 'header', default = 1,
-                   help='Indicates either to write the header/footer of the file or not')
-#########################Functions###################
-def printv(string):
-    global debug
-    if debug == 1:
-        print string
-
-###############           WELCOME           ###############
-print '\n#########################Welcome to Packter#############################\n'
-print 'Starting in\n3'
-time.sleep(1)
-print '2'
-time.sleep(1)
-print '1'
-time.sleep(1)
-args = parser.parse_args()
-captureTimeSecs=int(args.timeSecs)
-debug=int(args.verboseMode)
-remotead=args.remoteAddr
-header=args.header
-gws=net.gateways()
-if gws['default'] == {}:
-    print 'No connection. End of Program'
-    exit(0)
-aux=gws['default'][net.AF_INET]
-if args.iface == 1:
-    iface=str(aux[1])
-else:
-    iface=args.iface
-net.ifaddresses(iface)
-ip = net.ifaddresses(iface)[net.AF_INET][0]['addr']
-totalNoip=0
-totalCount=0
-totalBytes=0
-secCounter=0
-upBytes=0
-downBytes=0
-upCount=0
-downCount=0
 actualSec=0
 fileName = time.strftime("%Y%m%d-%H%M%S")
 fileName = 'packter'+fileName+'.txt'
 f = open(fileName, 'w')
+if detailed == 1:
+    fileName2 =  'packterDetailed'+ time.strftime("%Y%m%d-%H%M%S")+'.txt'
+    f2=  open(fileName2, 'w')
 if header == 1:
     info = '############################## Packter #################################\n'
     info = info+'The interface to capture is: '+iface + '\n'
@@ -82,8 +29,34 @@ for i in range(0,len(capture)):
         if  capture[i].ip.src == ip or capture[i].ip.dst == ip:
             if args.remoteAddr != 1:
                 if (capture[i].ip.src == args.remoteAddr or capture[i].ip.dst == args.remoteAddr):
-                    print 's' #some some
+                    if detailed == 1:
+                        info2=str(actualSec.strftime("%H:%M:%S"))+':'+ capture[i].ip.src+' -> '
+                        info2=info+capture[i].ip.dst+ ' size: '+capture[i].length+' Bytes\n'
+                        f2.write(info2)
+                    totalCount=totalCount+1
+                    totalBytes=totalBytes + int(capture[i].length)
+                    if actualSec == 0:
+                        actualSec=capture[i].sniff_time
+                    if actualSec.second != capture[i].sniff_time.second:
+                        actualText=str(actualSec.strftime("%H:%M:%S"))+','+str(upCount)+','+str(upBytes)+','+str(downCount)+','+str(downBytes)+'\n'
+                        f.write(actualText)
+                        printv(actualText)
+                        actualSec=capture[i].sniff_time
+                        upBytes=0
+                        downBytes=0
+                        upCount=0
+                        downCount=0
+                    if  capture[i].ip.src == ip:#
+                        upBytes = upBytes + int(capture[i].length)
+                        upCount = upCount + 1
+                    else:
+                        downBytes = upBytes + int(capture[i].length)
+                        downCount = upCount + 1
             else:
+                if detailed == 1:
+                    info2=str(actualSec.strftime("%H:%M:%S"))+':'+ capture[i].ip.src+' -> '
+                    info2=info+capture[i].ip.dst+ ' size: '+capture[i].length+' Bytes\n'
+                    f2.write(info2)
                 totalCount=totalCount+1
                 totalBytes=totalBytes + int(capture[i].length)
                 if actualSec == 0:
