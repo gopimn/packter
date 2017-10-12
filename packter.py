@@ -10,13 +10,13 @@ parser.add_argument('-i',action = 'store', dest = 'iface', default=1,
                    help='Network interface  to be sniffed')
 parser.add_argument('-a', action = 'store', dest = 'remoteAddr', default = 1,
                    help='Remote address')
-parser.add_argument('-v', action = 'store', dest = 'verboseMode', default = 0,
+parser.add_argument('-v', action = 'store_const', dest = 'verboseMode', const =1,
                    help='Show extra information with value 1')
 parser.add_argument('-t', action = 'store', dest = 'timeSecs', default = 300,
                    help='Duration of the files')
-parser.add_argument('-r', action = 'store', dest = 'header', default = 1,
+parser.add_argument('-f', action = 'store_const', dest = 'header', const = 1,
                    help='Indicates either to write the header/footer of the file or not')
-parser.add_argument('-o', action = 'store', dest = 'detailed', default = 0,
+parser.add_argument('-d', action = 'store_const', dest = 'detailed', const = 1,
                    help='Save detailed information file')
 
 #########################Functions###################
@@ -26,6 +26,14 @@ def printv(string):
         print string
 
 ###############           WELCOME           ###############
+
+args = parser.parse_args()
+captureTimeSecs=int(args.timeSecs)
+debug=int(args.verboseMode)
+remotead=args.remoteAddr
+header=args.header
+detailed=int(args.detailed)
+
 print '\n#########################Welcome to Packter#############################\n'
 print 'Starting in\n3'
 time.sleep(1)
@@ -33,12 +41,7 @@ print '2'
 time.sleep(1)
 print '1'
 time.sleep(1)
-args = parser.parse_args()
-captureTimeSecs=int(args.timeSecs)
-debug=int(args.verboseMode)
-remotead=args.remoteAddr
-header=args.header
-detailed=int(args.detailed)
+
 gws=net.gateways()
 if gws['default'] == {}:
     print 'No connection. End of Program'
@@ -51,8 +54,10 @@ else:
 net.ifaddresses(iface)
 ip = net.ifaddresses(iface)[net.AF_INET][0]['addr']
 totalNoip=0
-totalCount=0
-totalBytes=0
+totalupCount=0
+totalupBytes=0
+totaldownCount=0
+totaldownBytes=0
 secCounter=0
 upBytes=0
 downBytes=0
@@ -93,12 +98,10 @@ for i in range(0,len(capture)):
                         info2=str(actualSec.strftime("%H:%M:%S"))+':'+ capture[i].ip.src+' -> '
                         info2=info+capture[i].ip.dst+ ' size: '+capture[i].length+' Bytes\n'
                         f2.write(info2)
-                    totalCount=totalCount+1
-                    totalBytes=totalBytes + int(capture[i].length)
                     if actualSec == 0:
                         actualSec=capture[i].sniff_time
                     if actualSec.second != capture[i].sniff_time.second:
-                        actualText=str(actualSec.strftime("%H:%M:%S"))+','+str(upCount)+','+str(upBytes)+','+str(downCount)+','+str(downBytes)+'\n'
+                        actualText=str(actualSec.strftime("%H:%M:%S"))+'\t'+str(upCount)+'\t'+str(upBytes)+'\t'+str(downCount)+'\t'+str(downBytes)+'\n'
                         f.write(actualText)
                         printv(actualText)
                         actualSec=capture[i].sniff_time
@@ -109,9 +112,13 @@ for i in range(0,len(capture)):
                     if  capture[i].ip.src == ip:#
                         upBytes = upBytes + int(capture[i].length)
                         upCount = upCount + 1
+                        totalupBytes=totalupBytes+ + int(capture[i].length)
+                        totalupCount=totalupCount+1
                     else:
                         downBytes = upBytes + int(capture[i].length)
                         downCount = upCount + 1
+                        totaldownBytes=totaldownBytes+ + int(capture[i].length)
+                        totaldownCount=totaldownCount+1
             else:
                 if actualSec == 0:
                     actualSec=capture[i].sniff_time
@@ -119,10 +126,8 @@ for i in range(0,len(capture)):
                     info2=str(actualSec.strftime("%H:%M:%S"))+':'+ capture[i].ip.src+' -> '
                     info2=info2+capture[i].ip.dst+ ' size: '+capture[i].length+' Bytes\n'
                     f2.write(info2)
-                totalCount=totalCount+1
-                totalBytes=totalBytes + int(capture[i].length)
                 if actualSec.second != capture[i].sniff_time.second:
-                    actualText=str(actualSec.strftime("%H:%M:%S"))+','+str(upCount)+','+str(upBytes)+','+str(downCount)+','+str(downBytes)+'\n'
+                    actualText=str(actualSec.strftime("%H:%M:%S"))+'\t'+str(upCount)+'\t'+str(upBytes)+'\t'+str(downCount)+'\t'+str(downBytes)+'\n'
                     f.write(actualText)
                     printv(actualText)
                     actualSec=capture[i].sniff_time
@@ -133,15 +138,22 @@ for i in range(0,len(capture)):
                 if  capture[i].ip.src == ip:#
                     upBytes = upBytes + int(capture[i].length)
                     upCount = upCount + 1
+                    totalupBytes=totalupBytes+ + int(capture[i].length)
+                    totalupCount=totalupCount+1
                 else:
                     downBytes = upBytes + int(capture[i].length)
                     downCount = upCount + 1
+                    totaldownBytes=totaldownBytes+ + int(capture[i].length)
+                    totaldownCount=totaldownCount+1
     else:
         totalNoip=totalNoip+1
         printv( 'NO IP:'+str(totalNoip))
 if header == 1:
     info='########################################################################\n'
-    info = info + 'Total packets on upload: ' + str(totalCount) + '\nTotal bytes:' + str(totalBytes)+ '\nTotal no IP:' + str(totalNoip)+'\n'
+    info = info + 'Total packets uploaded: ' + str(totalupCount) + '\nTotal bytes uploaded: ' + str(totalupBytes)+'\n'
+    info = info + 'Total packets downloaded: ' + str(totaldownCount) + '\nTotal bytes downloaded: ' + str(totaldownBytes)+'\n'
+    info = info + 'Total packets: ' + str(totaldownCount + totalupCount) + '\nTotal bytes: ' + str(totaldownBytes+ totalupBytes)+'\n'
+    info = info +'Total no IP: ' + str(totalNoip)+'\n'
     printv (info)
     f.write(info)
 if detailed == 1:
